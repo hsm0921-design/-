@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌎 아메리카 탐험 학습게임</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --sky:#0ea5e9;--sky2:#e0f2fe;--sky3:#0284c7;
+  --pur:#8b5cf6;--pur2:#ede9fe;--pur3:#6d28d9;
+  --amb:#f59e0b;--amb2:#fef3c7;--amb3:#b45309;
+  --ok:#22c55e;--ok2:#dcfce7;
+  --no:#ef4444;--no2:#fee2e2;
+  --bg:#0f172a;--bg2:#1e293b;--bg3:#334155;
+  --card:#1e293b;--card2:#273548;
+  --text:#f1f5f9;--sub:#94a3b8;--border:#334155;
+  --gold:#fbbf24;--xp:#a78bfa;
+}
+body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+.screen{display:none;flex-direction:column;align-items:center;min-height:100vh;}
+.screen.active{display:flex;}
+
+/* ════ 스플래시 / 홈 ════ */
+#splash{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#0f172a 100%);
+  justify-content:center;align-items:center;text-align:center;gap:16px;padding:30px;}
+.splash-globe{font-size:5rem;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.splash-title{font-size:2.2rem;font-weight:800;background:linear-gradient(90deg,#38bdf8,#818cf8,#f472b6);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.splash-sub{color:var(--sub);font-size:.95rem;}
+.start-btn{margin-top:12px;background:linear-gradient(135deg,var(--sky),var(--pur));color:#fff;
+  border:none;border-radius:50px;padding:16px 48px;font-size:1.1rem;font-weight:700;cursor:pointer;
+  font-family:inherit;box-shadow:0 4px 20px rgba(14,165,233,.4);transition:transform .15s;}
+.start-btn:hover{transform:scale(1.04);}
+
+/* ════ 홈 ════ */
+#home{padding:0;background:var(--bg);}
+.home-top{width:100%;background:linear-gradient(135deg,#1e293b,#0f172a);padding:20px 20px 28px;
+  border-bottom:1px solid var(--border);}
+.player-row{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--sky),var(--pur));
+  display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;}
+.player-info h2{font-size:1rem;font-weight:700;}
+.player-info p{font-size:.78rem;color:var(--sub);}
+.xp-bar-wrap{background:var(--bg3);border-radius:4px;height:6px;margin-top:4px;width:180px;}
+.xp-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--xp),#f472b6);transition:width .5s;}
+.top-stats{display:flex;gap:12px;}
+.tstat{background:rgba(255,255,255,.06);border-radius:12px;padding:10px 16px;text-align:center;flex:1;}
+.tstat .tv{font-size:1.3rem;font-weight:800;}
+.tstat .tl{font-size:.68rem;color:var(--sub);}
+.streak-fire{color:#f97316;}
+
+/* 단원 카드 */
+.home-body{width:100%;max-width:500px;padding:20px;display:flex;flex-direction:column;gap:14px;}
+.unit-card{background:var(--card);border-radius:18px;padding:20px;border:1px solid var(--border);
+  cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.unit-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;}
+.unit-card.uA::before{background:linear-gradient(90deg,var(--sky),#38bdf8);}
+.unit-card.uB::before{background:linear-gradient(90deg,var(--pur),#ec4899);}
+.unit-card.uC::before{background:linear-gradient(90deg,var(--amb),#f97316);}
+.unit-card:hover{transform:translateY(-2px);border-color:var(--sky);}
+.unit-card .uc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.uc-icon{font-size:2rem;}
+.uc-stars{display:flex;gap:3px;font-size:1.1rem;}
+.unit-card h3{font-size:1rem;font-weight:700;margin-bottom:3px;}
+.unit-card p{font-size:.78rem;color:var(--sub);margin-bottom:12px;}
+.uc-progress-wrap{background:var(--bg3);border-radius:4px;height:6px;}
+.uc-progress{height:100%;border-radius:4px;transition:width .5s;}
+.uA .uc-progress{background:linear-gradient(90deg,var(--sky),#38bdf8);}
+.uB .uc-progress{background:linear-gradient(90deg,var(--pur),#ec4899);}
+.uC .uc-progress{background:linear-gradient(90deg,var(--amb),#f97316);}
+.uc-pct{font-size:.72rem;color:var(--sub);margin-top:4px;text-align:right;}
+.lock-overlay{position:absolute;inset:0;background:rgba(15,23,42,.7);border-radius:18px;
+  display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:default;}
+
+/* ════ 단원 메뉴 ════ */
+#unit-menu{background:var(--bg);padding:0;}
+.um-header{width:100%;background:var(--bg2);padding:16px 20px 20px;border-bottom:1px solid var(--border);}
+.back-btn{background:none;border:none;color:var(--sub);font-size:.9rem;cursor:pointer;margin-bottom:10px;
+  display:flex;align-items:center;gap:6px;font-family:inherit;}
+.back-btn:hover{color:var(--text);}
+.um-title{font-size:1.3rem;font-weight:800;}
+.um-desc{font-size:.82rem;color:var(--sub);margin-top:2px;}
+.um-body{width:100%;max-width:500px;padding:20px;display:flex;flex-direction:column;gap:12px;}
+.mode-btn{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 20px;
+  display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .15s;text-align:left;}
+.mode-btn:hover{border-color:var(--sky);background:var(--card2);}
+.mode-btn .mb-ico{font-size:2rem;width:48px;text-align:center;flex-shrink:0;}
+.mode-btn h3{font-size:.97rem;font-weight:700;margin-bottom:2px;}
+.mode-btn p{font-size:.77rem;color:var(--sub);}
+.mode-btn .mb-badge{margin-left:auto;background:var(--bg3);padding:4px 10px;border-radius:20px;
+  font-size:.7rem;font-weight:700;color:var(--sub);flex-shrink:0;}
+.mode-btn.locked{opacity:.4;cursor:not-allowed;}
+
+/* ════ 개념 학습 (플래시카드) ════ */
+#study{background:var(--bg);padding:0;}
+.study-header{width:100%;background:var(--bg2);padding:14px 20px;display:flex;align-items:center;
+  gap:14px;border-bottom:1px solid var(--border);}
+.study-prog-wrap{flex:1;background:var(--bg3);height:6px;border-radius:3px;}
+.study-prog{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--sky),var(--pur));transition:width .4s;}
+.study-count{font-size:.82rem;color:var(--sub);white-space:nowrap;}
+.card-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;width:100%;max-width:500px;}
+.flip-card{width:100%;max-width:420px;height:260px;perspective:1000px;cursor:pointer;margin-bottom:16px;}
+.flip-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .5s;}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg);}
+.flip-front,.flip-back{position:absolute;inset:0;border-radius:20px;padding:28px;display:flex;
+  flex-direction:column;justify-content:center;align-items:center;text-align:center;backface-visibility:hidden;}
+.flip-front{background:linear-gradient(135deg,var(--bg2),var(--card2));border:1px solid var(--border);}
+.flip-back{background:linear-gradient(135deg,#0f2a1a,#1a3a2a);border:1px solid #2d6a4f;transform:rotateY(180deg);}
+.flip-label{font-size:.72rem;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.flip-front .flip-label{color:var(--sky);}
+.flip-back .flip-label{color:#52b788;}
+.flip-main{font-size:1.3rem;font-weight:700;line-height:1.5;}
+.flip-sub{font-size:.85rem;color:var(--sub);margin-top:10px;line-height:1.5;}
+.flip-hint{font-size:.75rem;color:var(--sub);margin-top:8px;}
+.card-btn-row{display:flex;gap:10px;width:100%;max-width:420px;}
+.know-btn,.retry-btn{flex:1;padding:14px;border-radius:12px;border:none;font-size:.95rem;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:all .15s;}
+.retry-btn{background:var(--bg3);color:var(--sub);}
+.know-btn{background:linear-gradient(135deg,var(--ok),#16a34a);color:#fff;}
+.retry-btn:hover{background:var(--border);}
+.know-btn:hover{filter:brightness(1.1);}
+.tap-hint{font-size:.75rem;color:var(--sub);margin-top:10px;text-align:center;}
+
+/* 학습 완료 ★ */
+.study-done{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;
+  padding:30px;text-align:center;gap:14px;}
+.done-stars{font-size:2.5rem;letter-spacing:4px;}
+.done-title{font-size:1.5rem;font-weight:800;}
+.done-msg{color:var(--sub);font-size:.9rem;}
+
+/* ════ 퀴즈 게임 ════ */
+#quiz{background:var(--bg);padding:0;}
+.quiz-hd{width:100%;background:var(--bg2);padding:12px 18px;display:flex;align-items:center;
+  gap:12px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.lives{display:flex;gap:4px;font-size:1.2rem;}
+.quiz-prog-wrap{flex:1;background:var(--bg3);height:7px;border-radius:4px;min-width:60px;}
+.quiz-prog{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--ok),#86efac);transition:width .4s;}
+.combo-badge{background:linear-gradient(135deg,var(--gold),#f97316);color:#000;padding:4px 12px;
+  border-radius:20px;font-size:.75rem;font-weight:800;white-space:nowrap;transition:all .2s;}
+.combo-badge.hide{opacity:0;}
+.timer-wrap{display:flex;align-items:center;gap:6px;}
+.timer-arc{font-size:1.4rem;font-weight:800;color:var(--sky);}
+.timer-arc.warn{color:var(--no);animation:blink .5s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+.quiz-body{width:100%;max-width:500px;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.q-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:700;margin-bottom:6px;}
+.qtext{font-size:1.1rem;font-weight:600;line-height:1.6;color:var(--text);}
+.choices-grid{display:flex;flex-direction:column;gap:9px;}
+.choice{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:14px 16px;
+  text-align:left;cursor:pointer;font-size:.95rem;color:var(--text);font-family:inherit;transition:all .12s;
+  display:flex;align-items:center;gap:12px;}
+.choice-num{width:26px;height:26px;border-radius:50%;background:var(--bg3);font-size:.8rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--sub);}
+.choice:hover:not(:disabled){border-color:var(--sky);background:rgba(14,165,233,.08);}
+.choice.correct{border-color:var(--ok);background:rgba(34,197,94,.12);color:var(--ok);}
+.choice.correct .choice-num{background:var(--ok);color:#fff;}
+.choice.wrong{border-color:var(--no);background:rgba(239,68,68,.12);color:var(--no);}
+.choice.wrong .choice-num{background:var(--no);color:#fff;}
+.choice.reveal{border-color:var(--ok);background:rgba(34,197,94,.08);}
+.choice:disabled{cursor:default;}
+
+/* 피드백 팝업 */
+.feedback-bar{width:100%;max-width:500px;border-radius:14px;padding:13px 18px;font-size:.9rem;
+  font-weight:500;display:none;line-height:1.5;margin:0 16px;}
+.feedback-bar.show{display:block;}
+.feedback-bar.ok{background:rgba(34,197,94,.15);border:1.5px solid var(--ok);color:#86efac;}
+.feedback-bar.no{background:rgba(239,68,68,.12);border:1.5px solid var(--no);color:#fca5a5;}
+.nxt{width:100%;max-width:500px;margin:0 16px;background:linear-gradient(135deg,var(--sky3),var(--pur3));
+  color:#fff;border:none;border-radius:14px;padding:14px;font-size:1rem;font-weight:700;cursor:pointer;
+  font-family:inherit;display:none;transition:all .15s;}
+.nxt.show{display:block;}
+.nxt:hover{filter:brightness(1.1);}
+
+/* XP 팝업 */
+.xp-pop{position:fixed;top:80px;right:20px;background:linear-gradient(135deg,var(--xp),#f472b6);
+  color:#fff;padding:8px 16px;border-radius:20px;font-weight:700;font-size:.88rem;
+  animation:xpfly 1.5s forwards;pointer-events:none;z-index:999;}
+@keyframes xpfly{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+.combo-pop{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:2.5rem;font-weight:800;color:var(--gold);text-shadow:0 0 30px rgba(251,191,36,.6);
+  animation:combopop .8s forwards;pointer-events:none;z-index:999;}
+@keyframes combopop{0%{opacity:1;transform:translate(-50%,-50%) scale(.5)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+
+/* ════ 결과 화면 ════ */
+#result{background:var(--bg);justify-content:center;padding:24px;}
+.res-wrap{width:100%;max-width:460px;}
+.res-stars{font-size:3rem;text-align:center;margin-bottom:10px;letter-spacing:6px;}
+.res-title{font-size:1.8rem;font-weight:800;text-align:center;margin-bottom:4px;}
+.res-score{font-size:3.5rem;font-weight:800;text-align:center;
+  background:linear-gradient(90deg,var(--sky),var(--pur));-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;}
+.res-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:20px 0;}
+.rs{background:var(--card);border-radius:14px;padding:14px 10px;text-align:center;border:1px solid var(--border);}
+.rs .rv{font-size:1.5rem;font-weight:800;}
+.rs .rl{font-size:.7rem;color:var(--sub);margin-top:2px;}
+.res-xp{text-align:center;background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(244,114,182,.15));
+  border:1px solid var(--pur);border-radius:14px;padding:14px;margin-bottom:16px;}
+.res-xp span{font-size:1.1rem;font-weight:700;color:var(--xp);}
+.wronglist{background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border);}
+.wronglist h3{font-size:.85rem;font-weight:700;color:var(--sub);margin-bottom:10px;}
+.wrong-item{font-size:.82rem;padding:8px 10px;background:rgba(239,68,68,.08);border-radius:8px;
+  margin-bottom:6px;border-left:3px solid var(--no);color:#fca5a5;line-height:1.5;}
+.res-btns{display:flex;gap:10px;}
+.rbtn-o{flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:12px;
+  padding:12px;font-size:.93rem;font-weight:700;cursor:pointer;font-family:inherit;}
+.rbtn-f{flex:1;background:linear-gradient(135deg,var(--sky),var(--pur));color:#fff;border:none;
+  border-radius:12px;padding:12px;font-size:.93rem;font-weight:700;cursor:pointer;font-family:inherit;}
+
+/* ════ 오답 노트 ════ */
+#wrongnote{background:var(--bg);padding:0;}
+.wn-body{width:100%;max-width:500px;padding:18px;}
+.wn-item{background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border);}
+.wn-item .wi-q{font-size:.92rem;font-weight:600;margin-bottom:8px;color:var(--text);}
+.wn-item .wi-ans{font-size:.82rem;padding:7px 12px;border-radius:8px;background:var(--ok2);
+  color:var(--ok);font-weight:600;margin-bottom:6px;}
+.wn-item .wi-exp{font-size:.8rem;color:var(--sub);line-height:1.5;}
+.wn-unit{font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:10px;float:right;margin-bottom:6px;}
+
+/* ════ 공통 ════ */
+.section-title{font-size:1rem;font-weight:700;color:var(--sub);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.divider{height:1px;background:var(--border);margin:4px 0;}
+
+@media(max-width:420px){
+  .splash-title{font-size:1.7rem;}
+  .flip-main{font-size:1.1rem;}
+  .qtext{font-size:1rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ 스플래시 ═══ -->
+<div id="splash" class="screen active">
+  <div class="splash-globe">🌎</div>
+  <div class="splash-title">아메리카 탐험</div>
+  <div class="splash-sub">미래엔 사회1 · 아메리카 단원<br>스스로 배우는 학습 게임</div>
+  <button class="start-btn" onclick="initApp()">탐험 시작하기 →</button>
+</div>
+
+<!-- ═══ 홈 ═══ -->
+<div id="home" class="screen">
+  <div class="home-top">
+    <div class="player-row">
+      <div class="avatar">🧭</div>
+      <div class="player-info">
+        <h2>탐험가 <span id="lv-label">Lv.1</span></h2>
+        <p>경험치 <span id="xp-num">0</span> / <span id="xp-need">100</span></p>
+        <div class="xp-bar-wrap"><div class="xp-bar" id="xp-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="top-stats">
+      <div class="tstat"><div class="tv streak-fire" id="streak-disp">🔥 0</div><div class="tl">연속 정답</div></div>
+      <div class="tstat"><div class="tv" id="total-correct-disp">0</div><div class="tl">총 정답</div></div>
+      <div class="tstat"><div class="tv" id="badge-disp">0</div><div class="tl">획득 배지</div></div>
+    </div>
+  </div>
+  <div class="home-body">
+    <div class="section-title">📚 단원 선택</div>
+    <div class="unit-card uA" onclick="openUnit('A')">
+      <div class="uc-top">
+        <div class="uc-icon">🌄</div>
+        <div class="uc-stars" id="stars-A">☆☆☆</div>
+      </div>
+      <h3>아메리카 속으로</h3>
+      <p>지형·기후·앵글로/라틴아메리카 구분</p>
+      <div class="uc-progress-wrap"><div class="uc-progress" id="prog-A" style="width:0%"></div></div>
+      <div class="uc-pct" id="pct-A">0% 완료</div>
+    </div>
+    <div class="unit-card uB" onclick="openUnit('B')">
+      <div class="uc-top">
+        <div class="uc-icon">👥</div>
+        <div class="uc-stars" id="stars-B">☆☆☆</div>
+      </div>
+      <h3>인종과 문화</h3>
+      <p>원주민 문명·이민 역사·언어·종교</p>
+      <div class="uc-progress-wrap"><div class="uc-progress" id="prog-B" style="width:0%"></div></div>
+      <div class="uc-pct" id="pct-B">0% 완료</div>
+    </div>
+    <div class="unit-card uC" onclick="openUnit('C')">
+      <div class="uc-top">
+        <div class="uc-icon">🏢</div>
+        <div class="uc-stars" id="stars-C">☆☆☆</div>
+      </div>
+      <h3>초국적 기업</h3>
+      <p>기업 사례·영향·입지·세계화</p>
+      <div class="uc-progress-wrap"><div class="uc-progress" id="prog-C" style="width:0%"></div></div>
+      <div class="uc-pct" id="pct-C">0% 완료</div>
+    </div>
+    <div class="divider"></div>
+    <div class="section-title">📋 오답 노트</div>
+    <div class="mode-btn" onclick="showWrongNote()">
+      <div class="mb-ico">📋</div>
+      <div><h3>내 오답 노트</h3><p>틀린 문제 모아보기 · 복습하기</p></div>
+      <div class="mb-badge" id="wrong-cnt-badge">0개</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 단원 메뉴 ═══ -->
+<div id="unit-menu" class="screen">
+  <div class="um-header">
+    <button class="back-btn" onclick="showScr('home')">← 홈으로</button>
+    <div class="um-title" id="um-title"></div>
+    <div class="um-desc" id="um-desc"></div>
+  </div>
+  <div class="um-body">
+    <div class="mode-btn" id="mb-study" onclick="startStudy()">
+      <div class="mb-ico">🃏</div>
+      <div><h3>개념 학습</h3><p>핵심 개념을 플래시카드로 익혀요</p></div>
+      <div class="mb-badge" id="study-badge">10장</div>
+    </div>
+    <div class="mode-btn" id="mb-quiz" onclick="startQuiz('normal')">
+      <div class="mb-ico">📝</div>
+      <div><h3>퀴즈 도전</h3><p>학습 내용을 문제로 점검해요 · ❤️3개</p></div>
+      <div class="mb-badge" id="quiz-badge">15문제</div>
+    </div>
+    <div class="mode-btn" id="mb-speed" onclick="startQuiz('speed')">
+      <div class="mb-ico">⚡</div>
+      <div><h3>스피드 퀴즈</h3><p>10초 제한 · 콤보 보너스 점수</p></div>
+      <div class="mb-badge">10문제</div>
+    </div>
+    <div class="mode-btn" id="mb-ox" onclick="startQuiz('ox')">
+      <div class="mb-ico">⭕❌</div>
+      <div><h3>OX 퀴즈</h3><p>참/거짓 빠르게 판단하는 연습</p></div>
+      <div class="mb-badge">12문제</div>
+    </div>
+    <div class="mode-btn" id="mb-master" onclick="startQuiz('master')">
+      <div class="mb-ico">🏆</div>
+      <div><h3>마스터 도전</h3><p>모든 유형 혼합 · 만점 시 마스터 배지!</p></div>
+      <div class="mb-badge">20문제</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 개념 학습 ═══ -->
+<div id="study" class="screen">
+  <div class="study-header">
+    <button class="back-btn" style="margin:0;padding:0;" onclick="showScr('unit-menu')">←</button>
+    <div class="study-prog-wrap"><div class="study-prog" id="study-pg" style="width:0%"></div></div>
+    <div class="study-count" id="study-cnt">0/0</div>
+  </div>
+  <div class="card-area" id="card-area">
+    <!-- 플래시카드 -->
+    <div class="flip-card" id="flip-card" onclick="flipCard()">
+      <div class="flip-inner" id="flip-inner">
+        <div class="flip-front">
+          <div class="flip-label">📖 개념 카드 — 탭하여 확인</div>
+          <div class="flip-main" id="card-front"></div>
+          <div class="flip-sub" id="card-front2"></div>
+        </div>
+        <div class="flip-back">
+          <div class="flip-label">✅ 핵심 정리</div>
+          <div class="flip-main" id="card-back"></div>
+          <div class="flip-sub" id="card-back2"></div>
+        </div>
+      </div>
+    </div>
+    <div class="tap-hint" id="tap-hint">카드를 탭하면 답이 나와요</div>
+    <div class="card-btn-row" id="card-btns" style="display:none;">
+      <button class="retry-btn" onclick="cardAnswer(false)">🔄 다시 볼게요</button>
+      <button class="know-btn" onclick="cardAnswer(true)">✅ 알겠어요!</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 퀴즈 게임 ═══ -->
+<div id="quiz" class="screen">
+  <div class="quiz-hd">
+    <button class="back-btn" style="margin:0;padding:0;font-size:.8rem;" onclick="quitQuiz()">✕</button>
+    <div class="lives" id="lives">❤️❤️❤️</div>
+    <div class="quiz-prog-wrap"><div class="quiz-prog" id="quiz-pg" style="width:0%"></div></div>
+    <div class="combo-badge hide" id="combo-badge">🔥 콤보 x1</div>
+    <div class="timer-wrap"><span class="timer-arc" id="q-timer">—</span></div>
+  </div>
+  <div class="quiz-body">
+    <div>
+      <span class="q-badge" id="q-badge"></span>
+      <div class="qtext" id="q-text"></div>
+    </div>
+    <div class="choices-grid" id="q-choices"></div>
+  </div>
+  <div class="feedback-bar" id="q-fb"></div>
+  <button class="nxt" id="q-nxt" onclick="nextQ()">다음 문제 →</button>
+</div>
+
+<!-- ═══ 결과 ═══ -->
+<div id="result" class="screen">
+  <div class="res-wrap">
+    <div class="res-stars" id="r-stars">⭐⭐⭐</div>
+    <div class="res-title" id="r-title">훌륭해요!</div>
+    <div class="res-score" id="r-score">100점</div>
+    <div class="res-stats">
+      <div class="rs"><div class="rv" id="r-c">-</div><div class="rl">정답</div></div>
+      <div class="rs"><div class="rv" id="r-t">-</div><div class="rl">전체</div></div>
+      <div class="rs"><div class="rv" id="r-p">-</div><div class="rl">정답률</div></div>
+    </div>
+    <div class="res-xp">🎉 획득 경험치: <span id="r-xp">+0 XP</span></div>
+    <div class="wronglist" id="r-wronglist" style="display:none;">
+      <h3>📋 틀린 문제 오답 노트에 저장됨</h3>
+      <div id="r-wrongs"></div>
+    </div>
+    <div class="res-btns">
+      <button class="rbtn-o" id="r-retry">다시 도전</button>
+      <button class="rbtn-f" onclick="goHome()">홈으로</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 오답 노트 ═══ -->
+<div id="wrongnote" class="screen">
+  <div class="um-header" style="width:100%;">
+    <button class="back-btn" onclick="showScr('home')">← 홈으로</button>
+    <div class="um-title">📋 오답 노트</div>
+    <div class="um-desc" id="wn-subtitle"></div>
+  </div>
+  <div class="wn-body" id="wn-body"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// 콘텐츠 데이터
+// ══════════════════════════════════════
+
+/* ─ 플래시카드 ─ */
+const CARDS={
+  A:[
+    {front:"아메리카의 구분",front2:"크게 두 지역으로 나뉩니다",back:"앵글로아메리카(미국·캐나다)\n영어, 개신교, 영국 식민지",back2:"vs 라틴아메리카(멕시코 이남)\n스페인어·포르투갈어, 가톨릭"},
+    {front:"로키산맥 🏔️",front2:"북아메리카 서부",back:"신기 습곡 산맥 — 높고 험준\n북아메리카 서부를 남북으로 관통",back2:"cf. 애팔래치아산맥(동부, 고기 습곡, 낮음)"},
+    {front:"애팔래치아산맥",front2:"북아메리카 동부",back:"고기 습곡 산맥 — 낮고 완만\n석탄 등 광물 자원이 풍부",back2:"오래전 형성 → 오랜 침식으로 낮아짐"},
+    {front:"그레이트플레인스",front2:"미국 중부 대평원",back:"세계적 곡창 지대\n밀·옥수수 재배 + 목축업 발달",back2:"광활한 평원 → 기계식 대규모 농업 가능"},
+    {front:"미시시피강 🌊",front2:"북아메리카 최대 강",back:"미국 중부를 흘러 멕시코만으로\n유역 일대가 농업 지대",back2:"cf. 아마존강 = 남아메리카 최대(유량 1위)"},
+    {front:"아마존강 🌿",front2:"유량 세계 1위",back:"길이는 세계 2위지만 유량은 세계 최대\n열대우림 기후 지역 관통",back2:"브라질에 주로 흐름 / 세계 최대 열대우림"},
+    {front:"안데스산맥 🏔️",front2:"남아메리카 서부",back:"세계에서 가장 긴 산맥(약 7,000km)\n남아메리카 서부 해안 따라 남북으로 뻗음",back2:"잉카 문명의 무대 / 페루·볼리비아·칠레 통과"},
+    {front:"파나마 지협",front2:"두 대륙 연결",back:"북아메리카와 남아메리카를 잇는 좁은 육지\n파나마 운하 건설 → 태평양↔대서양 연결",back2:"파나마 운하: 세계 무역의 핵심 항로"},
+    {front:"아마존 기후 🌧️",front2:"열대 우림 기후",back:"연중 고온 다우 — 비가 많고 더움\n세계 최대의 열대우림 분포",back2:"'지구의 허파' — 산소 생산, 탄소 흡수"},
+    {front:"캐나다 북부 기후 ❄️",front2:"냉대·한대 기후",back:"고위도 → 겨울이 길고 매우 추움\n냉대 기후: 침엽수림 / 한대 기후: 이끼",back2:"이누이트 거주 지역과 연결"}
+  ],
+  B:[
+    {front:"이누이트 👨‍👩‍👧‍👦",front2:"북극 지방 원주민",back:"캐나다·알래스카·그린란드 거주\n사냥·어로로 생활, 혹독한 환경 적응",back2:"이글루(얼음집), 카약(가죽배) 사용"},
+    {front:"마야 문명 🏛️",front2:"멕시코 남부~중앙아메리카",back:"고도의 천문학·달력 발달\n기원전부터 멕시코 남부~과테말라 번성",back2:"치첸이트사 피라미드 / 상형문자 사용"},
+    {front:"아즈텍 문명 🦅",front2:"멕시코 고원",back:"14~16세기 멕시코 고원에서 번성\n태양의 돌(달력) 유물로 유명",back2:"1521년 스페인에 정복됨"},
+    {front:"잉카 문명 ☀️",front2:"안데스산맥 고원",back:"15~16세기 안데스 고원에서 번성\n태양신 숭배 / 마추픽추 유적",back2:"1533년 스페인에 정복됨"},
+    {front:"유럽의 식민 지배",front2:"아메리카 역사의 전환점",back:"스페인 → 라틴아메리카 대부분\n포르투갈 → 브라질\n영국·프랑스 → 북아메리카",back2:"1492년 콜럼버스 신대륙 도달이 계기"},
+    {front:"아프리카 흑인 이주 ⛓️",front2:"강제 이주 — 노예제",back:"플랜테이션(대농장) 노동력 필요\n사탕수수·면화·담배 재배를 위해 강제 이주",back2:"아프리카→아메리카 노예 무역 (16~19c)"},
+    {front:"앵글로아메리카 문화 🦅",front2:"미국·캐나다",back:"영어 사용 / 개신교(프로테스탄트)\n영국·프랑스의 식민지 역사",back2:"실용주의·개인주의 문화적 특징"},
+    {front:"라틴아메리카 문화 🌮",front2:"멕시코 이남",back:"스페인어(대부분) / 포르투갈어(브라질)\n가톨릭 / 스페인·포르투갈 식민지 역사",back2:"원주민+유럽+아프리카 문화 혼합"},
+    {front:"메스티소 & 물라토",front2:"혼혈 인종",back:"메스티소: 유럽계 + 아메리카 원주민\n물라토: 유럽계 + 아프리카계",back2:"라틴아메리카에 혼혈 인구 비율 높음"},
+    {front:"히스패닉 인구 증가 📈",front2:"미국의 인구 변화",back:"멕시코·중앙아메리카에서 미국으로 이민\n미국 내 히스패닉 인구 꾸준히 증가",back2:"스페인어를 사용하는 이민자 및 후손"}
+  ],
+  C:[
+    {front:"초국적 기업 🌐",front2:"정의",back:"두 나라 이상에서 생산·판매·서비스를 하는 기업\n= 다국적 기업",back2:"예: 애플, 구글, 나이키, 맥도날드, 코카콜라"},
+    {front:"입지 분리 구조 🗺️",front2:"본사 / 생산 / 판매",back:"본사·R&D → 선진국 대도시\n생산 공장 → 저임금 개발도상국\n판매 시장 → 전 세계",back2:"→ 비용 최소화 + 이익 극대화 전략"},
+    {front:"실리콘밸리 💻",front2:"미국 IT 산업 중심지",back:"캘리포니아 주 / 애플·구글·메타 본사\n세계 IT 초국적 기업의 집결지",back2:"고급 인력 + 대학·연구소 집중"},
+    {front:"나이키 Nike 👟",front2:"미국 대표 초국적 기업",back:"본사: 미국 오리건 주 비버턴\n생산: 베트남·인도네시아 등 동남아시아",back2:"저임금 국가에 생산 위탁 → 비용 절감"},
+    {front:"마킬라도라 🏭",front2:"멕시코 접경 생산 기지",back:"멕시코-미국 국경 지역의 조립 가공 공업 지대\n저임금(멕시코) + 미국 시장 근접성",back2:"초국적 기업 생산 기지 집중"},
+    {front:"긍정적 영향 ✅",front2:"개발도상국 진출 효과",back:"① 고용 창출\n② 기술 이전\n③ 인프라 개선\n④ 수출 증가 기여",back2:"현지 경제 성장에 도움이 될 수 있음"},
+    {front:"부정적 영향 ❌",front2:"개발도상국 진출 문제",back:"① 이익의 본국 유출\n② 현지 중소기업 타격\n③ 환경 오염 유발\n④ 노동력 착취·소비문화 획일화",back2:"긍정+부정 영향이 동시에 존재"},
+    {front:"산업 공동화 🏚️",front2:"선진국의 문제",back:"공장이 해외 개발도상국으로 이전\n→ 선진국 내 제조업 일자리 감소 현상",back2:"미국·영국 등 제조업 도시가 쇠퇴한 원인"},
+    {front:"이익 유출 💸",front2:"개발도상국의 문제",back:"초국적 기업이 벌어들인 이익\n→ 현지에 남지 않고 본국 본사로 빠져나감",back2:"개발도상국 경제 발전 한계의 원인 중 하나"},
+    {front:"세계화와 초국적 기업 🌍",front2:"관계",back:"초국적 기업은 세계화의 핵심 주체\n자본·기술·상품·서비스를 국경 넘어 이동",back2:"문화 획일화 우려 (맥도날드화) vs 경제 성장"}
+  ]
+};
+
+/* ─ 퀴즈 문제 ─ */
+const QB={
+  A:{
+    normal:[
+      {q:"북아메리카 서부의 신기 습곡 산맥은?",c:["애팔래치아산맥","로키산맥","안데스산맥","우랄산맥"],a:1,e:"로키산맥은 북아메리카 서부의 높고 험준한 신기 습곡 산맥입니다."},
+      {q:"북아메리카 동부에 위치한 고기 습곡 산맥으로 석탄 등 광물이 풍부한 곳은?",c:["로키산맥","안데스산맥","애팔래치아산맥","시에라네바다산맥"],a:2,e:"애팔래치아산맥 — 낮고 완만하며 광물 자원이 풍부한 고기 습곡 산맥"},
+      {q:"아마존강의 가장 두드러진 특징은?",c:["길이 세계 1위","유량 세계 1위","북아메리카를 흐름","건조기후 지역"],a:1,e:"아마존강은 유량(흐르는 물의 양)이 세계에서 가장 많은 강입니다."},
+      {q:"미국 중부 대평원으로 밀·옥수수 재배와 목축업이 발달한 지역은?",c:["아마존 분지","그레이트플레인스","파타고니아","브라질 고원"],a:1,e:"그레이트플레인스 — 미국 중부의 세계적 곡창 지대"},
+      {q:"남아메리카 서부의 세계 최장 산맥은?",c:["로키산맥","히말라야산맥","알프스산맥","안데스산맥"],a:3,e:"안데스산맥은 남아메리카 서부를 따라 약 7,000km 이상 뻗은 세계 최장 산맥"},
+      {q:"북아메리카 최대의 강은?",c:["아마존강","콜로라도강","미시시피강","오리노코강"],a:2,e:"미시시피강 — 북아메리카 최대의 강, 멕시코만으로 흐름"},
+      {q:"아마존 유역의 기후는?",c:["냉대 기후","건조 기후","열대 우림 기후","지중해성 기후"],a:2,e:"열대 우림 기후 — 연중 고온 다우, 세계 최대 열대우림 분포"},
+      {q:"파나마 지협이 연결하는 두 대륙은?",c:["아프리카-유럽","북아메리카-남아메리카","아시아-유럽","오세아니아-아시아"],a:1,e:"파나마 지협은 북아메리카와 남아메리카를 잇는 좁은 육지"},
+      {q:"앵글로아메리카에 해당하는 나라는?",c:["멕시코","브라질","미국·캐나다","아르헨티나"],a:2,e:"미국과 캐나다는 영국 식민지 영향을 받은 앵글로아메리카"},
+      {q:"라틴아메리카 국가들이 주로 사용하는 언어는?",c:["영어·프랑스어","스페인어·포르투갈어","아랍어·힌디어","중국어·일본어"],a:1,e:"스페인어(대부분)와 포르투갈어(브라질) — 스페인·포르투갈 식민지 역사"},
+      {q:"로키산맥에 대한 설명으로 옳은 것은?",c:["북아메리카 동부, 고기 습곡","북아메리카 서부, 신기 습곡","남아메리카 서부","남아메리카 동부"],a:1,e:"로키산맥 — 북아메리카 서부, 신기 습곡, 높고 험준"},
+      {q:"캐나다 북부와 알래스카의 주요 기후는?",c:["열대 우림","건조 기후","냉대·한대 기후","지중해성"],a:2,e:"고위도에 위치하여 냉대·한대 기후 — 겨울이 길고 매우 추움"},
+      {q:"브라질에 대한 설명으로 옳은 것은?",c:["영어 사용","스페인어 사용","포르투갈어 사용","프랑스어 사용"],a:2,e:"브라질은 포르투갈의 식민지 → 포르투갈어 사용"},
+      {q:"그레이트플레인스에서 주로 재배하는 작물은?",c:["커피·사탕수수","쌀·고무","밀·옥수수","열대 과일"],a:2,e:"그레이트플레인스 — 밀·옥수수 재배 + 목축업"},
+      {q:"앵글로아메리카와 라틴아메리카를 구분하는 가장 중요한 기준은?",c:["면적 차이","식민 지배국·언어·문화의 차이","인구 차이","기후 차이"],a:1,e:"식민 지배국(영국 vs 스페인·포르투갈)과 그에 따른 언어·종교·문화의 차이"}
+    ],
+    ox:[
+      {q:"로키산맥은 북아메리카 서부에 위치한 신기 습곡 산맥이다.",a:true,e:"로키산맥 = 서부, 신기 습곡. 동부는 애팔래치아산맥(고기 습곡)."},
+      {q:"아마존강은 유량이 세계에서 가장 많은 강이다.",a:true,e:"아마존강 — 길이 세계 2위지만 유량은 세계 1위."},
+      {q:"파나마 지협은 북아메리카와 남아메리카를 연결한다.",a:true,e:"파나마 지협 — 두 대륙을 연결하는 좁은 육지."},
+      {q:"그레이트플레인스는 미국 동부의 삼림 지대이다.",a:false,e:"그레이트플레인스는 미국 중부의 광대한 대평원 — 곡창 지대."},
+      {q:"애팔래치아산맥은 고기 습곡 산맥으로 석탄 자원이 풍부하다.",a:true,e:"애팔래치아산맥 — 고기 습곡, 낮고 완만, 광물(석탄) 풍부."},
+      {q:"안데스산맥은 남아메리카 동부에 위치한다.",a:false,e:"안데스산맥은 남아메리카 서부(태평양 쪽)에 위치."},
+      {q:"미시시피강은 남아메리카의 강이다.",a:false,e:"미시시피강은 북아메리카의 강. 남아메리카 최대 강은 아마존강."},
+      {q:"미국과 캐나다는 앵글로아메리카에 속한다.",a:true,e:"영국 식민지 → 영어, 개신교 → 앵글로아메리카."},
+      {q:"캐나다 북부는 열대 우림 기후가 나타난다.",a:false,e:"캐나다 북부 = 고위도 → 냉대·한대 기후."},
+      {q:"브라질은 라틴아메리카에 속하며 포르투갈어를 사용한다.",a:true,e:"포르투갈 식민지 → 포르투갈어 / 라틴아메리카에 속함."},
+      {q:"로키산맥과 애팔래치아산맥은 모두 북아메리카에 있다.",a:true,e:"로키산맥(서부) + 애팔래치아산맥(동부) = 둘 다 북아메리카."},
+      {q:"아마존 유역은 열대 우림 기후로 세계 최대 열대우림이 있다.",a:true,e:"열대 우림 기후 → 세계 최대 열대우림 '지구의 허파'."}
+    ],
+    speed:[
+      {q:"북아메리카 서부 신기 습곡 산맥은?",c:["애팔래치아","로키산맥","안데스","우랄"],a:1},
+      {q:"유량 세계 1위 강은?",c:["나일강","아마존강","미시시피강","양쯔강"],a:1},
+      {q:"미국 중부 대평원은?",c:["아마존","그레이트플레인스","파타고니아","브라질 고원"],a:1},
+      {q:"남아메리카 서부 세계 최장 산맥은?",c:["로키산맥","히말라야","알프스","안데스산맥"],a:3},
+      {q:"파나마 지협이 연결하는 대륙은?",c:["아프리카-유럽","북아메리카-남아메리카","아시아-유럽","오세아니아-아시아"],a:1},
+      {q:"앵글로아메리카에 속하는 나라는?",c:["멕시코","브라질","미국","아르헨티나"],a:2},
+      {q:"아마존 유역 기후는?",c:["냉대","건조","열대우림","지중해성"],a:2},
+      {q:"북아메리카 최대 강은?",c:["아마존","미시시피강","콜로라도","오리노코"],a:1},
+      {q:"애팔래치아산맥 특징은?",c:["서부, 신기","동부, 고기","서부, 고기","동부, 신기"],a:1},
+      {q:"라틴아메리카 주요 언어는?",c:["영어·프랑스어","스페인어·포르투갈어","아랍어","중국어"],a:1}
+    ]
+  },
+  B:{
+    normal:[
+      {q:"북극 지방에 거주하는 아메리카 원주민은?",c:["마야인","잉카인","이누이트","아즈텍인"],a:2,e:"이누이트 — 캐나다·알래스카·그린란드 등 북극 지방 거주"},
+      {q:"멕시코 남부~중앙아메리카에서 발달한 고대 문명은?",c:["잉카 문명","이누이트","마야 문명","아즈텍 문명"],a:2,e:"마야 문명 — 고도의 천문학·달력 발달, 기원전부터 번성"},
+      {q:"멕시코 고원에서 14~16세기에 번성한 문명은?",c:["마야 문명","아즈텍 문명","잉카 문명","이누이트"],a:1,e:"아즈텍 문명 — 멕시코 고원, 태양의 돌(달력) 유물로 유명"},
+      {q:"안데스산맥 고원에서 태양신을 숭배했던 문명은?",c:["마야 문명","아즈텍 문명","이누이트","잉카 문명"],a:3,e:"잉카 문명 — 안데스 고원, 태양신 숭배, 마추픽추 유적"},
+      {q:"브라질에서 포르투갈어를 쓰는 이유는?",c:["영국 식민지였기 때문","프랑스 식민지였기 때문","포르투갈 식민지였기 때문","스페인 식민지였기 때문"],a:2,e:"포르투갈의 식민지 → 포르투갈어"},
+      {q:"앵글로아메리카의 주요 종교는?",c:["가톨릭","이슬람교","불교","개신교(프로테스탄트)"],a:3,e:"영국 식민지 영향 → 개신교(프로테스탄트)"},
+      {q:"라틴아메리카에서 주로 믿는 종교는?",c:["개신교","이슬람교","불교","가톨릭"],a:3,e:"스페인·포르투갈 식민지배 → 가톨릭 전파"},
+      {q:"아프리카 흑인이 아메리카에 강제 이주된 이유는?",c:["자유 이민","플랜테이션 노예 노동","종교 박해","기술 이민"],a:1,e:"플랜테이션 대농장의 노동력 필요 → 아프리카 흑인 강제 이주"},
+      {q:"유럽계와 아메리카 원주민의 혼혈 인종은?",c:["이누이트","물라토","히스패닉","메스티소"],a:3,e:"메스티소 — 유럽계 + 아메리카 원주민 혼혈"},
+      {q:"1492년 아메리카 대륙에 도달한 탐험가는?",c:["마젤란","바스코 다 가마","콜럼버스","아메리고 베스푸치"],a:2,e:"콜럼버스 — 1492년 스페인 왕실 지원으로 아메리카 도달"},
+      {q:"라틴아메리카에서 가장 많이 사용하는 언어는?",c:["영어","포르투갈어","스페인어","프랑스어"],a:2,e:"스페인어 — 브라질(포르투갈어) 제외 대부분 나라에서 사용"},
+      {q:"아메리카가 다문화 사회가 된 주요 배경이 아닌 것은?",c:["유럽인 이주","아프리카 흑인 이주","아시아계 이민","원주민의 타 대륙 이주"],a:3,e:"아메리카 다문화 사회 = 유럽+아프리카+아시아 이주의 역사"},
+      {q:"스페인의 식민지배를 받은 지역의 주요 문화 특징은?",c:["영어, 개신교","스페인어, 가톨릭","포르투갈어, 가톨릭","영어, 가톨릭"],a:1,e:"스페인 식민지 → 스페인어 + 가톨릭 전파"},
+      {q:"잉카 문명의 대표적인 유적은?",c:["치첸이트사","태양의 돌","마추픽추","에펠탑"],a:2,e:"마추픽추 — 페루 안데스산맥의 잉카 문명 유적"},
+      {q:"유럽계와 아프리카계의 혼혈 인종은?",c:["메스티소","이누이트","물라토","히스패닉"],a:2,e:"물라토 — 유럽계 + 아프리카계 혼혈"}
+    ],
+    ox:[
+      {q:"이누이트는 북극 지방에 거주하는 아메리카 원주민이다.",a:true,e:"이누이트 — 캐나다·알래스카·그린란드 북극 지방 거주."},
+      {q:"잉카 문명은 안데스산맥 고원에서 번성한 문명이다.",a:true,e:"잉카 문명 — 15~16세기 안데스 고원, 태양신 숭배."},
+      {q:"브라질은 스페인의 식민지였기 때문에 스페인어를 사용한다.",a:false,e:"브라질은 포르투갈 식민지 → 포르투갈어 사용."},
+      {q:"앵글로아메리카에서는 주로 개신교를 믿는다.",a:true,e:"영국 식민지 영향 → 개신교(프로테스탄트)."},
+      {q:"마야 문명은 멕시코 남부~중앙아메리카에서 발달했다.",a:true,e:"마야 문명 = 멕시코 남부~과테말라."},
+      {q:"라틴아메리카에서 주로 믿는 종교는 이슬람교이다.",a:false,e:"라틴아메리카 = 가톨릭 (스페인·포르투갈 식민지 영향)."},
+      {q:"아프리카 흑인들은 자발적으로 아메리카에 이주했다.",a:false,e:"강제 이주 — 플랜테이션 노예 노동을 위해 끌려옴."},
+      {q:"아즈텍 문명은 멕시코 고원 지대에서 번성했다.",a:true,e:"아즈텍 문명 — 14~16세기 멕시코 고원."},
+      {q:"메스티소는 유럽계와 아메리카 원주민의 혼혈이다.",a:true,e:"메스티소 = 유럽계 + 아메리카 원주민 혼혈."},
+      {q:"스페인은 브라질을 제외한 라틴아메리카 대부분을 지배했다.",a:true,e:"브라질은 포르투갈 / 나머지 대부분은 스페인 식민지."},
+      {q:"아메리카는 단일 민족으로 구성된 지역이다.",a:false,e:"원주민+유럽계+아프리카계+아시아계 등 세계 최다 민족."},
+      {q:"콜럼버스는 1492년에 아메리카 대륙에 도달했다.",a:true,e:"1492년 콜럼버스 도달 → 유럽인의 아메리카 진출 시작."}
+    ],
+    speed:[
+      {q:"북극 지방 아메리카 원주민은?",c:["마야인","잉카인","아즈텍인","이누이트"],a:3},
+      {q:"안데스 고원의 고대 문명은?",c:["마야","아즈텍","잉카","이누이트"],a:2},
+      {q:"멕시코 남부~중앙아메리카 문명은?",c:["잉카","마야","아즈텍","이누이트"],a:1},
+      {q:"브라질의 공용어는?",c:["스페인어","영어","포르투갈어","프랑스어"],a:2},
+      {q:"라틴아메리카의 주요 종교는?",c:["이슬람교","불교","힌두교","가톨릭"],a:3},
+      {q:"앵글로아메리카의 주요 종교는?",c:["가톨릭","이슬람교","개신교","불교"],a:2},
+      {q:"유럽계+원주민 혼혈은?",c:["이누이트","물라토","히스패닉","메스티소"],a:3},
+      {q:"아프리카 흑인 강제 이주 이유는?",c:["자유 이민","플랜테이션 노예","종교 박해","기술 이민"],a:1},
+      {q:"멕시코 고원 고대 문명은?",c:["마야","잉카","아즈텍","이누이트"],a:2},
+      {q:"스페인 식민지 → 주요 언어는?",c:["영어·개신교","스페인어·가톨릭","포르투갈어","프랑스어"],a:1}
+    ]
+  },
+  C:{
+    normal:[
+      {q:"초국적 기업이란 무엇인가?",c:["한 나라에서만 활동하는 기업","두 나라 이상에서 생산·판매 활동을 하는 기업","정부가 운영하는 공기업","중소기업 중심 지역 기업"],a:1,e:"초국적 기업(다국적 기업) — 여러 나라에 걸쳐 경영 활동"},
+      {q:"초국적 기업의 본사가 주로 위치하는 곳은?",c:["아프리카 농촌","동남아시아 농촌","선진국 대도시","아마존 유역"],a:2,e:"본사 = 선진국 대도시 / 생산 = 개발도상국"},
+      {q:"나이키(Nike)의 생산 공장이 주로 위치하는 곳은?",c:["미국 본토","유럽","베트남·인도네시아 등 동남아","캐나다"],a:2,e:"나이키 생산 공장 = 저임금 동남아시아 개발도상국"},
+      {q:"멕시코-미국 접경의 조립 가공 공업 지대는?",c:["실리콘밸리","마킬라도라","플랜테이션","아마존 특구"],a:1,e:"마킬라도라 — 저임금 + 미국 시장 근접성 활용"},
+      {q:"미국 IT 초국적 기업들의 본거지는?",c:["디트로이트","실리콘밸리","뉴올리언스","시카고"],a:1,e:"실리콘밸리 — 캘리포니아, 애플·구글·메타 본사"},
+      {q:"초국적 기업의 긍정적 영향은?",c:["이익의 본국 유출","환경 오염","고용 창출과 기술 이전","현지 기업 도태"],a:2,e:"고용 창출, 기술 이전, 인프라 개선 등 긍정적 효과"},
+      {q:"공장 해외 이전으로 선진국 제조업 일자리가 줄어드는 현상은?",c:["세계화","산업 공동화","기술 이전","이익 유출"],a:1,e:"산업 공동화 — 제조업 이전 → 본국 일자리 감소"},
+      {q:"초국적 기업 수익이 현지 아닌 본국으로 빠지는 것은?",c:["이익 창출","이익 유출","산업 공동화","세계화"],a:1,e:"이익 유출 — 개발도상국 경제 발전 한계의 원인"},
+      {q:"다음 중 미국의 초국적 기업이 아닌 것은?",c:["애플","구글","삼성전자","코카콜라"],a:2,e:"삼성전자는 한국의 초국적 기업"},
+      {q:"초국적 기업이 개발도상국에 생산 시설을 세우는 이유는?",c:["고급 인력 확보","넓은 시장","저렴한 노동력","좋은 기후"],a:2,e:"저렴한 노동력 → 생산 비용 절감이 가장 큰 목적"},
+      {q:"초국적 기업의 세계화 촉진 방식은?",c:["국경 통제 강화","자본·기술·상품의 국경 초월 이동","무역 장벽 강화","문화 고립"],a:1,e:"초국적 기업은 자본·기술·상품·서비스를 세계로 확산시킴"},
+      {q:"초국적 기업의 부정적 문화적 영향은?",c:["전통 문화 다양화","소비문화 획일화","문화 창의성 증가","각국 문화 독립 강화"],a:1,e:"맥도날드·코카콜라 등으로 전 세계 소비문화가 비슷해짐"},
+      {q:"세계 최대 소매 유통 초국적 기업은?",c:["구글","애플","월마트","코카콜라"],a:2,e:"월마트 — 미국 본사, 세계 최대 소매 유통 기업"},
+      {q:"초국적 기업의 환경적 부정 영향은?",c:["선진국 환경 강화","오염 산업을 개발도상국으로 이전","신재생에너지 촉진","탄소 배출 감소"],a:1,e:"환경 규제 약한 개발도상국으로 오염 시설 이전"},
+      {q:"초국적 기업의 R&D(연구개발) 부서는 주로 어디에 있나?",c:["저임금 개발도상국","북극 지방","선진국 기술 집약 도시","아마존 유역"],a:2,e:"R&D = 고급 인력 필요 → 선진국 기술 집약 도시에 집중"}
+    ],
+    ox:[
+      {q:"초국적 기업은 두 나라 이상에서 경영 활동을 하는 기업이다.",a:true,e:"여러 국가에 걸쳐 생산·판매·서비스 활동을 합니다."},
+      {q:"초국적 기업의 본사는 일반적으로 개발도상국에 위치한다.",a:false,e:"본사 = 선진국 / 생산 공장 = 개발도상국."},
+      {q:"나이키는 미국에 본사를 두고 동남아시아에서 생산한다.",a:true,e:"나이키 본사 = 미국 오리건 / 생산 = 베트남 등."},
+      {q:"마킬라도라는 멕시코 미국 접경의 조립 가공 공업 지대이다.",a:true,e:"저임금 + 미국 시장 근접성을 활용한 생산 기지."},
+      {q:"초국적 기업 진출로 선진국 내 제조업 일자리가 증가한다.",a:false,e:"공장 해외 이전 → 선진국 제조업 일자리 감소(산업 공동화)."},
+      {q:"초국적 기업의 이익은 모두 현지 개발도상국에 남는다.",a:false,e:"이익 대부분은 본국 본사로 유출됨."},
+      {q:"실리콘밸리는 미국 IT 초국적 기업들의 중심지이다.",a:true,e:"캘리포니아 실리콘밸리 — 애플·구글·메타 등 본사."},
+      {q:"초국적 기업은 세계화를 촉진하는 핵심 주체이다.",a:true,e:"자본·기술·상품의 국경 초월 이동 → 세계화 촉진."},
+      {q:"산업 공동화란 공장 해외 이전으로 본국 일자리가 감소하는 현상이다.",a:true,e:"산업 공동화 — 제조업 이전으로 선진국 경제 기반 약화."},
+      {q:"초국적 기업은 전 세계 소비문화의 획일화를 가져올 수 있다.",a:true,e:"맥도날드·코카콜라 등 → 소비문화 획일화 우려."},
+      {q:"초국적 기업 진출이 개발도상국에 미치는 영향은 모두 긍정적이다.",a:false,e:"긍정(고용·기술)과 부정(이익 유출·환경 오염)이 동시에 존재."},
+      {q:"월마트는 세계 최대 소매 유통 초국적 기업이다.",a:true,e:"월마트 — 미국 본사, 수십 개국 운영."}
+    ],
+    speed:[
+      {q:"초국적 기업 본사 주요 위치는?",c:["아프리카","동남아 농촌","선진국 대도시","아마존"],a:2},
+      {q:"나이키 본사 국가는?",c:["영국","미국","일본","독일"],a:1},
+      {q:"마킬라도라 위치 국가는?",c:["브라질","캐나다","멕시코","아르헨티나"],a:2},
+      {q:"산업 공동화란?",c:["세계화","이익 유출","본국 일자리 감소","기술 이전"],a:2},
+      {q:"세계 최대 소매 유통 기업은?",c:["구글","애플","코카콜라","월마트"],a:3},
+      {q:"실리콘밸리 위치는?",c:["뉴욕","텍사스","캘리포니아","플로리다"],a:2},
+      {q:"초국적 기업 긍정적 영향은?",c:["이익 유출","환경 오염","고용 창출","획일화"],a:2},
+      {q:"초국적 기업 생산 공장 주 위치는?",c:["선진국 대도시","개발도상국","북극","아마존"],a:1},
+      {q:"이익 유출이란?",c:["이익 증가","수익이 본국으로 빠짐","세계화","산업 공동화"],a:1},
+      {q:"미국 대표 IT 초국적 기업이 아닌 것은?",c:["애플","구글","삼성전자","메타"],a:2}
+    ]
+  }
+};
+
+// ══════════════════════════════════════
+// 상태 & 저장
+// ══════════════════════════════════════
+let ST={xp:0,lv:1,streak:0,totalCorrect:0,badges:0,
+  progress:{A:0,B:0,C:0},stars:{A:0,B:0,C:0},wrongs:[]};
+
+function loadST(){try{const d=localStorage.getItem('amr_st');if(d)ST=JSON.parse(d);}catch(e){}}
+function saveST(){try{localStorage.setItem('amr_st',JSON.stringify(ST));}catch(e){}}
+
+const XP_PER_LV=100, MAX_LV=20;
+function addXP(n){
+  ST.xp+=n; ST.totalCorrect++;
+  while(ST.xp>=XP_PER_LV*ST.lv&&ST.lv<MAX_LV){ST.xp-=XP_PER_LV*ST.lv;ST.lv++;}
+  saveST(); updateHUD();
+  // XP 팝업
+  const pop=document.createElement('div');
+  pop.className='xp-pop';pop.textContent='+'+n+' XP';
+  document.body.appendChild(pop);setTimeout(()=>pop.remove(),1500);
+}
+function addWrong(q,correctAns,exp,unit){
+  if(ST.wrongs.length>50)ST.wrongs.shift();
+  ST.wrongs.push({q,a:correctAns,e:exp||'',u:unit,t:Date.now()});
+  saveST();
+}
+
+// ══════════════════════════════════════
+// 화면 전환
+// ══════════════════════════════════════
+function showScr(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+function initApp(){loadST();updateHUD();showScr('home');}
+function goHome(){clearInterval(qTmrId);showScr('home');updateHUD();}
+
+function updateHUD(){
+  const lvNeeded=XP_PER_LV*ST.lv;
+  const pct=Math.round((ST.xp/lvNeeded)*100);
+  document.getElementById('lv-label').textContent='Lv.'+ST.lv;
+  document.getElementById('xp-num').textContent=ST.xp;
+  document.getElementById('xp-need').textContent=lvNeeded;
+  document.getElementById('xp-bar').style.width=pct+'%';
+  document.getElementById('streak-disp').textContent='🔥 '+ST.streak;
+  document.getElementById('total-correct-disp').textContent=ST.totalCorrect;
+  document.getElementById('badge-disp').textContent=ST.badges;
+  document.getElementById('wrong-cnt-badge').textContent=ST.wrongs.length+'개';
+  ['A','B','C'].forEach(u=>{
+    const p=ST.progress[u]; const s=ST.stars[u];
+    document.getElementById('prog-'+u).style.width=p+'%';
+    document.getElementById('pct-'+u).textContent=p+'% 완료';
+    const starEl=document.getElementById('stars-'+u);
+    starEl.textContent=(s>=1?'⭐':'☆')+(s>=2?'⭐':'☆')+(s>=3?'⭐':'☆');
+  });
+}
+
+// ══════════════════════════════════════
+// 단원 메뉴
+// ══════════════════════════════════════
+let curUnit='A';
+const UNIT_INFO={A:{name:'🌄 아메리카 속으로',desc:'지형·기후·앵글로/라틴아메리카'},
+                 B:{name:'👥 인종과 문화',desc:'원주민 문명·이민 역사·언어·종교'},
+                 C:{name:'🏢 초국적 기업',desc:'기업 사례·영향·입지·세계화'}};
+function openUnit(u){
+  curUnit=u; const info=UNIT_INFO[u];
+  document.getElementById('um-title').textContent=info.name;
+  document.getElementById('um-desc').textContent=info.desc;
+  showScr('unit-menu');
+}
+
+// ══════════════════════════════════════
+// 개념 학습 (플래시카드)
+// ══════════════════════════════════════
+let studyCards=[], studyCurr=0, studyKnown=0, studyRetry=[];
+let cardFlipped=false;
+
+function startStudy(){
+  studyCards=shuffle([...CARDS[curUnit]]);
+  studyCurr=0; studyKnown=0; studyRetry=[];
+  showScr('study');
+  renderCard();
+}
+function renderCard(){
+  if(studyCurr>=studyCards.length){studyComplete();return;}
+  const c=studyCards[studyCurr]; cardFlipped=false;
+  document.getElementById('study-pg').style.width=((studyCurr/studyCards.length)*100)+'%';
+  document.getElementById('study-cnt').textContent=(studyCurr+1)+'/'+studyCards.length;
+  document.getElementById('card-front').textContent=c.front;
+  document.getElementById('card-front2').textContent=c.front2||'';
+  document.getElementById('card-back').textContent=c.back;
+  document.getElementById('card-back2').textContent=c.back2||'';
+  document.getElementById('flip-inner').style.transform='';
+  document.getElementById('flip-card').classList.remove('flipped');
+  document.getElementById('card-btns').style.display='none';
+  document.getElementById('tap-hint').style.display='block';
+  // reset card area
+  const ca=document.getElementById('card-area');
+  ca.innerHTML='';
+  const fc=document.createElement('div');fc.className='flip-card';fc.id='flip-card';fc.onclick=flipCard;
+  fc.innerHTML=`<div class="flip-inner" id="flip-inner"><div class="flip-front"><div class="flip-label">📖 개념 카드 — 탭하여 확인</div><div class="flip-main">${c.front}</div><div class="flip-sub">${c.front2||''}</div></div><div class="flip-back"><div class="flip-label">✅ 핵심 정리</div><div class="flip-main" style="white-space:pre-line;">${c.back}</div><div class="flip-sub" style="white-space:pre-line;">${c.back2||''}</div></div></div>`;
+  const hint=document.createElement('div');hint.className='tap-hint';hint.id='tap-hint';hint.textContent='카드를 탭하면 답이 나와요';
+  const btns=document.createElement('div');btns.className='card-btn-row';btns.id='card-btns';btns.style.display='none';
+  btns.innerHTML='<button class="retry-btn" onclick="cardAnswer(false)">🔄 다시 볼게요</button><button class="know-btn" onclick="cardAnswer(true)">✅ 알겠어요!</button>';
+  ca.appendChild(fc);ca.appendChild(hint);ca.appendChild(btns);
+}
+function flipCard(){
+  const fc=document.getElementById('flip-card');
+  if(!fc)return;
+  fc.classList.toggle('flipped');
+  cardFlipped=!cardFlipped;
+  document.getElementById('card-btns').style.display=cardFlipped?'flex':'none';
+  document.getElementById('tap-hint').style.display=cardFlipped?'none':'block';
+}
+function cardAnswer(known){
+  if(known){studyKnown++;}
+  else{studyRetry.push(studyCards[studyCurr]);}
+  studyCurr++;
+  if(studyCurr>=studyCards.length&&studyRetry.length>0){
+    studyCards=[...studyRetry];studyRetry=[];studyCurr=0;
+  }
+  renderCard();
+}
+function studyComplete(){
+  const ca=document.getElementById('card-area');
+  ca.innerHTML=`<div class="study-done"><div class="done-stars">⭐⭐⭐</div><div class="done-title">학습 완료!</div><div class="done-msg">모든 개념 카드를 확인했어요.<br>이제 퀴즈로 실력을 점검해보세요!</div><button class="start-btn" style="margin-top:10px;" onclick="startQuiz('normal')">퀴즈 도전하기 →</button><button class="back-btn" style="margin-top:8px;padding:10px 20px;" onclick="showScr('unit-menu')">단원 메뉴로</button></div>`;
+  ST.progress[curUnit]=Math.max(ST.progress[curUnit],30);saveST();
+}
+
+// ══════════════════════════════════════
+// 퀴즈 게임
+// ══════════════════════════════════════
+let qPool=[], qIdx=0, qScore=0, qTotal=0, qLives=3, qCombo=0, qMode='normal';
+let qTmrId=null, qTimeLeft=0, qAnswered=false, qWrongs=[];
+
+function startQuiz(mode){
+  qMode=mode; qIdx=0; qScore=0; qLives=3; qCombo=0; qWrongs=[];
+  const isOX=mode==='ox'; const isSpeed=mode==='speed'; const isMaster=mode==='master';
+  if(isOX) qPool=shuffle([...QB[curUnit].ox]);
+  else if(isSpeed) qPool=shuffle([...QB[curUnit].speed]);
+  else if(isMaster) qPool=shuffle([...QB[curUnit].normal,...QB[curUnit].ox.slice(0,5)]);
+  else qPool=shuffle([...QB[curUnit].normal]);
+  qTotal=qPool.length;
+  showScr('quiz');
+  renderQ();
+}
+function renderQ(){
+  if(qIdx>=qTotal){endQuiz();return;}
+  const q=qPool[qIdx]; qAnswered=false;
+  // 헤더
+  document.getElementById('lives').textContent='❤️'.repeat(qLives)+'🖤'.repeat(3-qLives);
+  document.getElementById('quiz-pg').style.width=((qIdx/qTotal)*100)+'%';
+  const cb=document.getElementById('combo-badge');
+  if(qCombo>=2){cb.className='combo-badge';cb.textContent='🔥 콤보 x'+qCombo;}
+  else cb.className='combo-badge hide';
+  // 문제 유형 배지
+  const isOX=typeof q.a==='boolean';
+  document.getElementById('q-badge').textContent=isOX?'⭕❌ OX':'📝 객관식';
+  document.getElementById('q-badge').style.background=isOX?'rgba(139,92,246,.2)':'rgba(14,165,233,.2)';
+  document.getElementById('q-badge').style.color=isOX?'#a78bfa':'#38bdf8';
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('q-fb').className='feedback-bar';
+  document.getElementById('q-nxt').className='nxt';
+  // 선택지
+  const el=document.getElementById('q-choices'); el.innerHTML='';
+  const nums=['①','②','③','④'];
+  if(isOX){
+    ['⭕ 맞다 (O)','❌ 틀리다 (X)'].forEach((t,i)=>{
+      const b=document.createElement('button');
+      b.className='choice';
+      b.innerHTML=`<span class="choice-num">${i===0?'O':'X'}</span>${t}`;
+      b.dataset.i=i; b.onclick=()=>ansQ(b,i===(q.a?0:1));
+      el.appendChild(b);
+    });
+  } else {
+    const sh=shuffle(q.c.map((t,i)=>({t,i})));
+    sh.forEach(({t,i},ni)=>{
+      const b=document.createElement('button');
+      b.className='choice';
+      b.innerHTML=`<span class="choice-num">${nums[ni]}</span>${t}`;
+      b.dataset.i=i; b.onclick=()=>ansQ(b,i===q.a);
+      el.appendChild(b);
+    });
+  }
+  // 타이머
+  clearInterval(qTmrId);
+  if(qMode==='speed'){
+    qTimeLeft=10; updQTimer();
+    qTmrId=setInterval(()=>{qTimeLeft--;updQTimer();if(qTimeLeft<=0){clearInterval(qTmrId);qTimeout();}},1000);
+  } else {
+    document.getElementById('q-timer').textContent='—';
+    document.getElementById('q-timer').className='timer-arc';
+  }
+}
+function updQTimer(){
+  const el=document.getElementById('q-timer');
+  el.textContent=qTimeLeft+'s';
+  el.className='timer-arc'+(qTimeLeft<=3?' warn':'');
+}
+function ansQ(btn,ok){
+  if(qAnswered)return; qAnswered=true; clearInterval(qTmrId);
+  const q=qPool[qIdx];
+  const isOX=typeof q.a==='boolean';
+  // 정답 표시
+  document.querySelectorAll('#q-choices .choice').forEach(b=>{
+    b.disabled=true;
+    const i=parseInt(b.dataset.i);
+    const isCorrectBtn=isOX?(q.a&&i===0)||(!q.a&&i===1):(i===q.a);
+    if(isCorrectBtn) b.classList.add('reveal');
+  });
+  const fb=document.getElementById('q-fb');
+  if(ok){
+    btn.classList.add('correct');
+    qScore++; qCombo++;
+    const bonus=qMode==='speed'?Math.ceil(qTimeLeft/2):0;
+    const xpEarned=10+bonus+(qCombo>=3?5:0);
+    addXP(xpEarned);
+    ST.streak++; saveST();
+    fb.className='feedback-bar show ok';
+    const msg=qCombo>=3?`🔥 ${qCombo}콤보! `:'';
+    fb.textContent='✅ '+msg+'정답! '+(q.e||'');
+    if(qCombo===3||qCombo===5||qCombo===10){
+      const pop=document.createElement('div');pop.className='combo-pop';
+      pop.textContent='🔥 '+qCombo+' COMBO!';document.body.appendChild(pop);
+      setTimeout(()=>pop.remove(),800);
+    }
+  } else {
+    btn.classList.add('wrong'); qCombo=0; qLives--;
+    ST.streak=0; saveST();
+    fb.className='feedback-bar show no';
+    fb.textContent='❌ 오답. '+(q.e||'');
+    qWrongs.push({q:q.q,a:isOX?(q.a?'O(맞다)':'X(틀리다)'):q.c[q.a],e:q.e||''});
+    addWrong(q.q,isOX?(q.a?'O(맞다)':'X(틀리다)'):q.c[q.a],q.e||'',curUnit);
+    if(qLives<=0){clearInterval(qTmrId);setTimeout(endQuiz,1000);return;}
+  }
+  document.getElementById('q-nxt').className='nxt show';
+}
+function qTimeout(){
+  if(qAnswered)return; qAnswered=true;
+  qCombo=0; qLives--; ST.streak=0; saveST();
+  document.querySelectorAll('#q-choices .choice').forEach(b=>{b.disabled=true;});
+  const fb=document.getElementById('q-fb');
+  fb.className='feedback-bar show no'; fb.textContent='⏰ 시간 초과!';
+  if(qLives<=0){setTimeout(endQuiz,1000);return;}
+  document.getElementById('q-nxt').className='nxt show';
+}
+function nextQ(){qIdx++;renderQ();}
+function quitQuiz(){clearInterval(qTmrId);showScr('unit-menu');}
+function endQuiz(){
+  clearInterval(qTmrId);
+  const pct=Math.round((qScore/qTotal)*100);
+  const stars=pct>=90?3:pct>=60?2:pct>=30?1:0;
+  const xpBonus=stars*20;
+  if(xpBonus>0)addXP(xpBonus);
+  if(stars>ST.stars[curUnit]){
+    if(ST.stars[curUnit]===0&&stars>0)ST.badges++;
+    ST.stars[curUnit]=stars; saveST();
+  }
+  ST.progress[curUnit]=Math.min(100,Math.max(ST.progress[curUnit],pct));
+  saveST();
+  // 결과 화면
+  document.getElementById('r-stars').textContent='⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  const titles=['다시 도전해봐요','조금 더 힘내요!','잘했어요!','훌륭해요!','완벽해요! 🏆'];
+  document.getElementById('r-title').textContent=titles[Math.min(stars,4)];
+  document.getElementById('r-score').textContent=pct+'점';
+  document.getElementById('r-c').textContent=qScore;
+  document.getElementById('r-t').textContent=qTotal;
+  document.getElementById('r-p').textContent=pct+'%';
+  document.getElementById('r-xp').textContent='+'+(qScore*10+xpBonus)+' XP';
+  const wl=document.getElementById('r-wronglist');
+  const wc=document.getElementById('r-wrongs');
+  wc.innerHTML='';
+  if(qWrongs.length>0){
+    wl.style.display='block';
+    qWrongs.forEach(w=>{
+      const d=document.createElement('div');d.className='wrong-item';
+      d.innerHTML=`<b>Q. ${w.q}</b><br>정답: ${w.a}`;
+      wc.appendChild(d);
+    });
+  } else wl.style.display='none';
+  document.getElementById('r-retry').onclick=()=>startQuiz(qMode);
+  showScr('result');
+}
+
+// ══════════════════════════════════════
+// 오답 노트
+// ══════════════════════════════════════
+const UCOLOR={A:'#0ea5e9',B:'#8b5cf6',C:'#f59e0b'};
+const UNAME={A:'아메리카 속으로',B:'인종과 문화',C:'초국적 기업'};
+function showWrongNote(){
+  const body=document.getElementById('wn-body');
+  body.innerHTML='';
+  document.getElementById('wn-subtitle').textContent=ST.wrongs.length+'개의 오답이 저장되어 있어요';
+  if(ST.wrongs.length===0){
+    body.innerHTML='<div style="text-align:center;color:var(--sub);margin-top:60px;font-size:1.1rem;">📭 오답이 없어요!<br><small>퀴즈를 풀면 틀린 문제가 저장돼요</small></div>';
+  } else {
+    const sorted=[...ST.wrongs].reverse();
+    sorted.forEach(w=>{
+      const d=document.createElement('div');d.className='wn-item';
+      d.innerHTML=`<span class="wn-unit" style="background:${UCOLOR[w.u]}22;color:${UCOLOR[w.u]};">${UNAME[w.u]||w.u}</span><div style="clear:both;"></div><div class="wi-q">Q. ${w.q}</div><div class="wi-ans">✅ 정답: ${w.a}</div><div class="wi-exp">${w.e}</div>`;
+      body.appendChild(d);
+    });
+    const clrBtn=document.createElement('button');
+    clrBtn.textContent='🗑️ 오답 노트 초기화';
+    clrBtn.style.cssText='margin-top:8px;width:100%;padding:12px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:12px;cursor:pointer;font-family:inherit;font-size:.9rem;';
+    clrBtn.onclick=()=>{ST.wrongs=[];saveST();showWrongNote();};
+    body.appendChild(clrBtn);
+  }
+  showScr('wrongnote');
+}
+
+// ══════════════════════════════════════
+// 유틸
+// ══════════════════════════════════════
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+</script>
+</body>
+</html>
