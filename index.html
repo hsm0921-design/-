@@ -687,15 +687,7 @@ function renderCard(){
   const c=studyCards[studyCurr]; cardFlipped=false;
   document.getElementById('study-pg').style.width=((studyCurr/studyCards.length)*100)+'%';
   document.getElementById('study-cnt').textContent=(studyCurr+1)+'/'+studyCards.length;
-  document.getElementById('card-front').textContent=c.front;
-  document.getElementById('card-front2').textContent=c.front2||'';
-  document.getElementById('card-back').textContent=c.back;
-  document.getElementById('card-back2').textContent=c.back2||'';
-  document.getElementById('flip-inner').style.transform='';
-  document.getElementById('flip-card').classList.remove('flipped');
-  document.getElementById('card-btns').style.display='none';
-  document.getElementById('tap-hint').style.display='block';
-  // reset card area
+  // reset card area (동적으로 매번 새로 생성)
   const ca=document.getElementById('card-area');
   ca.innerHTML='';
   const fc=document.createElement('div');fc.className='flip-card';fc.id='flip-card';fc.onclick=flipCard;
